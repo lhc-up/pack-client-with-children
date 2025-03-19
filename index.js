@@ -43,5 +43,10 @@ for (const target of targets) {
     fse.copySync(installer, path.join(folder, path.basename(installer)));
     // 小版本文件
     fse.copySync(smallPkg, path.join(folder, path.basename(smallPkg)));
-    // TODO: 文件夹名称使用客户端标识（或txt文件标明关系），打包时不再打开文件夹
 }
+
+// TODO:
+// 1. 文件夹名称使用客户端标识（或txt文件标明关系，客户端标识直接写在配置中？）
+// 2. 打包时不再打开文件夹
+// 3. 版本号配置
+// 4. 界面化？任务编排？和之前的客户端打包项目整合到一起？
