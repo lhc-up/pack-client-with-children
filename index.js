@@ -7,6 +7,8 @@ const settings = require('./settings.json');
 const root = path.resolve(__dirname, '..');
 const { children, parent, env, targets } = settings;
 
+const startTime = Date.now();
+
 const resultFolder = path.join(__dirname, 'result');
 const parentFolder = path.join(root, parent);
 const clientFolder = path.join(parentFolder, 'client');
@@ -15,6 +17,7 @@ fse.emptyDirSync(resultFolder);
 fse.ensureDirSync(clientFolder);
 fse.emptyDirSync(clientFolder);
 
+shell.config.fatal = true;
 // 子应用
 for (const c of children) {
     shell.cd(path.join(root, c));
@@ -44,6 +47,9 @@ for (const target of targets) {
     // 小版本文件
     fse.copySync(smallPkg, path.join(folder, path.basename(smallPkg)));
 }
+
+const endTime = Date.now();
+console.log(`打包完成，用时${(endTime - startTime) / 1000}秒`);
 
 // TODO:
 // 1. 文件夹名称使用客户端标识（或txt文件标明关系，客户端标识直接写在配置中？）
