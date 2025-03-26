@@ -1,7 +1,8 @@
 const shell = require('shelljs');
 const fse = require('fs-extra');
 const path = require('path');
-const { getChildPkg, getInstaller } = require('./utils.js');
+const { getChildPkg, getInstaller } = require('./utils/utils.js');
+const log = require('./utils/log.js');
 const settings = require('./settings.json');
 
 const root = path.resolve(__dirname, '..');
@@ -20,9 +21,12 @@ fse.emptyDirSync(clientFolder);
 shell.config.fatal = true;
 // 子应用
 for (const c of children) {
+    log.title(`开始打包${c}：`);
     shell.cd(path.join(root, c));
     shell.exec('git checkout .');
     shell.exec('git pull'); 
+    log.title('近10条提交记录：');
+    shell.exec('git log -n 10 --pretty=format:"%h %s %ad"');
     shell.exec('npm i');
     shell.exec(`npm run pack:child ${env}`);
     const childPkg = getChildPkg(path.join(root, c));
@@ -56,3 +60,5 @@ console.log(`打包完成，用时${(endTime - startTime) / 1000}秒`);
 // 2. 打包时不再打开文件夹
 // 3. 版本号配置
 // 4. 界面化？任务编排？和之前的客户端打包项目整合到一起？
+// 5. 打包时二次确认（醒目提示），告知执行者，确认打包后将清空暂存区
+// 6. 实际打包日志输出到文件中，控制台中只保留关键点
