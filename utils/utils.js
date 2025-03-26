@@ -18,7 +18,20 @@ function getInstaller(root) {
     };
 }
 
+function formatTime(t) {
+    if (typeof t !== 'object') t = new Date(time);
+    const date = t.toLocaleDateString().replace(/\//g, '-');
+    const time = t.toLocaleTimeString().replace(/:/g, '-');
+    return `${date}-${time}`;
+}
+
+function formatNow() {
+    return formatTime(new Date());
+}
+
 module.exports = {
     getChildPkg,
     getInstaller,
+    formatTime,
+    formatNow,
 }

@@ -1,7 +1,7 @@
 const shell = require('shelljs');
 const fse = require('fs-extra');
 const path = require('path');
-const { getChildPkg, getInstaller } = require('./utils/utils.js');
+const { getChildPkg, getInstaller, formatNow } = require('./utils/utils.js');
 const log = require('./utils/log.js');
 const settings = require('./settings.json');
 
@@ -25,7 +25,7 @@ for (const c of children) {
     shell.cd(path.join(root, c));
     shell.exec('git checkout .');
     shell.exec('git pull'); 
-    log.title('近10条提交记录：');
+    log.title('近10条提交记录，作者信息：');
     shell.exec('git log -n 10 --pretty=format:"%h %s %ad"');
     shell.exec('npm i');
     shell.exec(`npm run pack:child ${env}`);
@@ -52,8 +52,13 @@ for (const target of targets) {
     fse.copySync(smallPkg, path.join(folder, path.basename(smallPkg)));
 }
 
+log.title('压缩dist zip：');
+shell.exec('rm -rf *.zip');
+// mac环境
+shell.exec(`zip -r 安装包-${env}-${formatNow()}.zip result/`);
+
 const endTime = Date.now();
-console.log(`打包完成，用时${(endTime - startTime) / 1000}秒`);
+log.success(`打包完成，用时${(endTime - startTime) / 1000}秒`);
 
 // TODO:
 // 1. 文件夹名称使用客户端标识（或txt文件标明关系，客户端标识直接写在配置中？）
