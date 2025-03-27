@@ -3,12 +3,12 @@ const fse = require('fs-extra');
 const path = require('path');
 const { getChildPkg, getInstaller, formatNow } = require('./utils/utils.js');
 const log = require('./utils/log.js');
-const settings = require('./settings.json');
+const config = require('./config.js');
 
 const root = path.resolve(__dirname, '..');
-const { children, parent, env, targets } = settings;
+const { children, parent, env, targets } = config;
 
-const startTime = Date.now();
+console.time('打包耗时');
 
 const resultFolder = path.join(__dirname, 'result');
 const parentFolder = path.join(root, parent);
@@ -52,13 +52,15 @@ for (const target of targets) {
     fse.copySync(smallPkg, path.join(folder, path.basename(smallPkg)));
 }
 
-log.title('压缩dist zip：');
+const zipName = `安装包-${env}-${formatNow()}.zip`;
+log.title(`压缩${zipName}：`);
+shell.cd(__dirname);
 shell.exec('rm -rf *.zip');
+shell.cd(resultFolder);
 // mac环境
-shell.exec(`zip -r 安装包-${env}-${formatNow()}.zip result/`);
+shell.exec(`zip -r ../${zipName} .`);
 
-const endTime = Date.now();
-log.success(`打包完成，用时${(endTime - startTime) / 1000}秒`);
+console.timeEnd('打包耗时');
 
 // TODO:
 // 1. 文件夹名称使用客户端标识（或txt文件标明关系，客户端标识直接写在配置中？）
@@ -67,3 +69,4 @@ log.success(`打包完成，用时${(endTime - startTime) / 1000}秒`);
 // 4. 界面化？任务编排？和之前的客户端打包项目整合到一起？
 // 5. 打包时二次确认（醒目提示），告知执行者，确认打包后将清空暂存区
 // 6. 实际打包日志输出到文件中，控制台中只保留关键点
+// 7. 支持git仓库初始化，配置git地址即可，在此项目中新增一个文件夹比如“project”，将git仓库克隆到此文件夹中，然后执行打包命令
