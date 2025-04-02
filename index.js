@@ -21,15 +21,30 @@ fse.emptyDirSync(clientFolder);
 shell.config.fatal = true;
 // 子应用
 for (const c of children) {
-    log.title(`开始打包${c}：`);
-    shell.cd(path.join(root, c));
+    const { name, version } = c;
+    const childFolder = path.join(root, name);
+
+    // git
+    log.title(`初始化${name}git仓库：`);
+    shell.cd(childFolder);
     shell.exec('git checkout .');
     shell.exec('git pull'); 
     log.title('近10条提交记录，作者信息：');
     shell.exec('git log -n 10 --pretty=format:"%h %s %ad"');
+
+    // 写入打包信息
+    log.title(`初始化${name}：`);
+    // version path
+    const versionPath = path.join(childFolder, 'public/version/index.js');
+    const code = fse.readFileSync(versionPath).toString();
+    const versionObj = eval(code);
+    versionObj.version = version.split('.');
+    fse.writeFileSync(versionPath, `module.exports = ${JSON.stringify(versionObj, null, 4)}`);
+
+    log.title(`开始打包${name}：`);
     shell.exec('npm i');
     shell.exec(`npm run pack:child ${env}`);
-    const childPkg = getChildPkg(path.join(root, c));
+    const childPkg = getChildPkg(path.join(root, name));
     // 子应用复制到整合应用的client文件夹
     fse.copySync(childPkg, path.join(clientFolder, path.basename(childPkg)));
 }
@@ -70,3 +85,4 @@ console.timeEnd('打包耗时');
 // 5. 打包时二次确认（醒目提示），告知执行者，确认打包后将清空暂存区
 // 6. 实际打包日志输出到文件中，控制台中只保留关键点
 // 7. 支持git仓库初始化，配置git地址即可，在此项目中新增一个文件夹比如“project”，将git仓库克隆到此文件夹中，然后执行打包命令
+// 8. 支持设置分支

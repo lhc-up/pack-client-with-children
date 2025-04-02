@@ -1,16 +1,25 @@
 const config = {
     env: 'test',
     children: [
-        "questionnaire-answer-v3.0",
-        "eachinaenglishclient",
-        "eachinaMusicClient"
+        {
+            name: "questionnaire-answer-v3.0",
+            version: "2.60.3"
+        },
+        {
+            name: 'eachinaenglishclient',
+            version: '1.0.1'
+        },
+        {
+            name: 'eachinaMusicClient',
+            version: '1.3.3'
+        }
     ],
     parent: 'eachinaclientframe',
     targets: [
-        'linux-x64',
-        'linux-arm64',
-        'linux-loong64',
-        'win-ia32'
+        // 'linux-x64',
+        // 'linux-arm64',
+        // 'linux-loong64',
+        // 'win-ia32'
     ]
 }
 
