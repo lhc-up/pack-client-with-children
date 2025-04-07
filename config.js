@@ -14,13 +14,18 @@ const config = {
             version: '1.3.3'
         }
     ],
-    parent: 'eachinaclientframe',
-    targets: [
-        // 'linux-x64',
-        // 'linux-arm64',
-        // 'linux-loong64',
-        // 'win-ia32'
-    ]
+    installers: [
+        {
+            name: 'eachinaclientframe',
+            version: '1.9.0',
+            targets: [
+                // 'linux-x64',
+                // 'linux-arm64',
+                // 'linux-loong64',
+                'win-ia32'
+            ]
+        }
+    ],
 }
 
 module.exports = config;
