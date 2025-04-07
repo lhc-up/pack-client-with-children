@@ -4,16 +4,17 @@ const path = require('path');
 const { getChildPkg, getInstaller, formatNow } = require('./utils/utils.js');
 const log = require('./utils/log.js');
 const config = require('./config.js');
+const inquirer = require('inquirer');
 
 // TODO:
 // 1. 文件夹名称使用客户端标识（或txt文件标明关系，客户端标识直接写在配置中？）
 // 2. 打包时不再打开文件夹
-// 3. 版本号配置
+// 3. done 版本号配置
 // 4. 界面化？任务编排？和之前的客户端打包项目整合到一起？
-// 5. 打包时二次确认（醒目提示），告知执行者，确认打包后将清空暂存区
+// 5. done 打包时二次确认（醒目提示），告知执行者，确认打包后将清空暂存区
 // 6. 实际打包日志输出到文件中，控制台中只保留关键点
-// 7. 支持git仓库初始化，配置git地址即可，在此项目中新增一个文件夹比如“project”，将git仓库克隆到此文件夹中，然后执行打包命令
-// 8. 支持设置分支
+// 7. done 在此项目中新增一个文件夹比如“project”，将git仓库克隆到此文件夹中，然后执行打包命令
+// 8. done 支持设置分支，默认develop
 // 9. 子应用打包好后放入一个文件夹中，然后打包installer，如果是整合包，则创建client文件夹并复制子应用进来
 // 10. 支持设置引入哪个子应用(支持设置引入的子应用版本???)
 // 11. 支持设置标识？（修改地方太多，项目本身需要可配置）
@@ -119,4 +120,12 @@ const task = {
     }
 }
 
-task.run();
+inquirer.prompt([{
+    type: 'confirm',
+    name: 'continue',
+    message: '需要打包的项目都在此工程的project目录下，请确保已经和开发仓库做了区分，且打包前会清空未提交的内容，是否继续？',
+}]).then(answers => {
+    if (answers['continue']) task.run();
+}).catch(error => {
+    console.error(error);
+});
