@@ -70,25 +70,29 @@ const task = {
         fse.copySync(childPkg, path.join(this.childResultFolder, path.basename(childPkg)));
     },
     packInstaller(installer) {
-        const { name, version, targets, branch } = installer;
+        const { name, version, targets, branch, includeChild } = installer;
         if (!targets?.length) return;
         this.initGit(name, branch);
         this.initVersion(name, version);
 
         const projectFolder = path.join(this.projectFolder, name);
-        // 子应用copy进来，后续由配置决定
-        fse.copySync(this.childResultFolder, path.join(projectFolder, 'client'));
+        const clientFolder = path.join(projectFolder, 'client');
+        fse.emptyDirSync(clientFolder);
+        if (includeChild) {
+            // copy子应用到client文件夹
+            fse.copySync(this.childResultFolder, clientFolder);
+        }
         
         shell.cd(projectFolder);
         shell.exec('npm i');
         for (const target of targets) {
             log.title(`开始打包${name}-${target}：`);
             shell.exec(`npm run pack:${target} ${config.env}`);
-            const result = getInstaller(projectFolder);
-            const folder = path.join(this.resultFolder, name, target);
-            fse.ensureDirSync(folder);
-            fse.copySync(result.installer, path.join(folder, path.basename(result.installer)));
-            fse.copySync(result.smallPkg, path.join(folder, path.basename(result.smallPkg)));
+            const packResult = getInstaller(projectFolder);
+            const destFolder = path.join(this.resultFolder, name, target);
+            fse.ensureDirSync(destFolder);
+            fse.copySync(packResult.installer, path.join(destFolder, path.basename(packResult.installer)));
+            fse.copySync(packResult.smallPkg, path.join(destFolder, path.basename(packResult.smallPkg)));
         }
     },
     initGit(projectName, branch) {
