@@ -3,16 +3,18 @@ const config = {
     children: [
         {
             name: "questionnaire-answer-v3.0",
-            version: "2.60.3"
+            version: "2.60.3",
+            // 默认develop
+            branch: 'develop',
         },
-        {
-            name: 'eachinaenglishclient',
-            version: '1.0.1'
-        },
-        {
-            name: 'eachinaMusicClient',
-            version: '1.3.3'
-        }
+        // {
+        //     name: 'eachinaenglishclient',
+        //     version: '1.0.1'
+        // },
+        // {
+        //     name: 'eachinaMusicClient',
+        //     version: '1.3.3'
+        // }
     ],
     installers: [
         {

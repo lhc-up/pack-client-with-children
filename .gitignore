@@ -140,4 +140,5 @@ $RECYCLE.BIN/
 .DS_Store
 
 result/
+project/
 *.zip
