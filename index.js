@@ -18,6 +18,7 @@ const inquirer = require('inquirer');
 // 9. done 子应用打包好后放入一个文件夹中，然后打包installer，如果是整合包，则创建client文件夹并复制子应用进来
 // 10. 支持设置引入哪个子应用(支持设置引入的子应用版本???)
 // 11. 支持设置标识？（修改地方太多，项目本身需要可配置）
+// 12. done 有version时使用version，没有时不修改version文件
 shell.config.fatal = true;
 const task = {
     root: __dirname,
@@ -106,6 +107,8 @@ const task = {
         shell.exec('git log -n 10 --pretty=format:"%h %ai %an %ce %s"');
     },
     initVersion(projectName, version) {
+        // version不存在时，使用项目中配置的version
+        if (!version) return;
         const folder = path.join(this.projectFolder, projectName);
         const versionPath = path.join(folder, 'public/version/index.js');
         const code = fse.readFileSync(versionPath).toString();
