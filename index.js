@@ -7,7 +7,7 @@ const config = require('./config.js');
 const inquirer = require('inquirer');
 
 // TODO:
-// 1. 文件夹名称使用客户端标识（或txt文件标明关系，客户端标识直接写在配置中？）
+// 1. 文件夹名称使用客户端标识（或txt文件标明关系）
 // 2. 打包时不再打开文件夹
 // 3. done 版本号配置
 // 4. 界面化？任务编排？和之前的客户端打包项目整合到一起？
@@ -19,42 +19,65 @@ const inquirer = require('inquirer');
 // 10. 支持设置引入哪个子应用(支持设置引入的子应用版本???)
 // 11. 支持设置标识？（修改地方太多，项目本身需要可配置）
 // 12. done 有version时使用version，没有时不修改version文件
+// 13. windows客户端签名以及证书配置？
 shell.config.fatal = true;
 const task = {
     root: __dirname,
-    // 打包结果存放目录
-    resultFolder: '',
-    // 子应用打包结果存放目录
-    childResultFolder: '',
+    // 打包结果根目录
+    resultRoot: '',
     // 项目存放目录
     projectFolder: '',
     run() {
         console.time('打包耗时');
         this.initFolder();
-        
-        const children = config.children || [];
-        for (const child of children) {
-            this.packChild(child);
-        }
-
+    
         const installers = config.installers || [];
         for (const installer of installers) {
             this.packInstaller(installer);
         }
 
         this.zip();
-
         console.timeEnd('打包耗时');
     },
     initFolder() {
         const result = path.join(this.root, 'result');
         fse.ensureDirSync(result);
         fse.emptyDirSync(result);
-        const child = path.join(result, 'child');
-        fse.ensureDirSync(child);
-        this.resultFolder = result;
-        this.childResultFolder = child;
+        this.resultRoot = result;
         this.projectFolder = path.join(this.root, 'project');
+    },
+    packInstaller(installer) {
+        const { name, version, targets, branch, children } = installer;
+        if (!targets?.length) return;
+
+        this.initGit(name, branch);
+        this.initVersion(name, version);
+        
+        const projectFolder = path.join(this.projectFolder, name);
+        // 单个客户端打包结果目录，按客户端标识区分
+        const resultFolder = path.join(this.resultRoot, name);
+        fse.ensureDirSync(resultFolder);
+        // 打包子应用并copy到client文件夹
+        if (children?.length) {
+            const clientFolder = path.join(projectFolder, 'client');
+            fse.ensureDirSync(clientFolder);
+            fse.emptyDirSync(clientFolder);
+            for (const child of children) {
+                const childPkg = this.packChild(child);
+                fse.copySync(childPkg, path.join(clientFolder, path.basename(childPkg)));
+                fse.copySync(childPkg, path.join(resultFolder, path.basename(childPkg)));
+            }
+        }
+        
+        shell.cd(projectFolder);
+        shell.exec('npm i');
+        for (const target of targets) {
+            log.title(`开始打包${name}-${target}：`);
+            shell.exec(`npm run pack:${target} ${config.env}`);
+            const packResult = getInstaller(projectFolder);
+            fse.copySync(packResult.installer, path.join(resultFolder, path.basename(packResult.installer)));
+            fse.copySync(packResult.smallPkg, path.join(resultFolder, path.basename(packResult.smallPkg)));
+        }
     },
     packChild(child) {
         const { name, version, branch } = child;
@@ -66,35 +89,7 @@ const task = {
         shell.cd(projectFolder);
         shell.exec('npm i');
         shell.exec(`npm run pack:child ${config.env}`);
-        const childPkg = getChildPkg(projectFolder);
-        // 子应用复制到result文件夹
-        fse.copySync(childPkg, path.join(this.childResultFolder, path.basename(childPkg)));
-    },
-    packInstaller(installer) {
-        const { name, version, targets, branch, includeChild } = installer;
-        if (!targets?.length) return;
-        this.initGit(name, branch);
-        this.initVersion(name, version);
-
-        const projectFolder = path.join(this.projectFolder, name);
-        const clientFolder = path.join(projectFolder, 'client');
-        fse.emptyDirSync(clientFolder);
-        if (includeChild) {
-            // copy子应用到client文件夹
-            fse.copySync(this.childResultFolder, clientFolder);
-        }
-        
-        shell.cd(projectFolder);
-        shell.exec('npm i');
-        for (const target of targets) {
-            log.title(`开始打包${name}-${target}：`);
-            shell.exec(`npm run pack:${target} ${config.env}`);
-            const packResult = getInstaller(projectFolder);
-            const destFolder = path.join(this.resultFolder, name, target);
-            fse.ensureDirSync(destFolder);
-            fse.copySync(packResult.installer, path.join(destFolder, path.basename(packResult.installer)));
-            fse.copySync(packResult.smallPkg, path.join(destFolder, path.basename(packResult.smallPkg)));
-        }
+        return getChildPkg(projectFolder);
     },
     initGit(projectName, branch) {
         log.title(`初始化${projectName}git仓库：`);
@@ -121,7 +116,7 @@ const task = {
         log.title(`压缩${zipName}：`);
         shell.cd(this.root);
         shell.exec('rm -rf *.zip');
-        shell.cd(this.resultFolder);
+        shell.cd(this.resultRoot);
         // mac环境
         shell.exec(`zip -r ../${zipName} .`);
     }
