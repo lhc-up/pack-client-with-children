@@ -25,8 +25,8 @@ const task = {
     root: __dirname,
     // 打包结果根目录
     resultRoot: '',
-    // 项目存放目录
-    projectFolder: '',
+    // 项目存放根目录
+    projectRoot: '',
     run() {
         console.time('打包耗时');
         this.initFolder();
@@ -44,7 +44,7 @@ const task = {
         fse.ensureDirSync(result);
         fse.emptyDirSync(result);
         this.resultRoot = result;
-        this.projectFolder = path.join(this.root, 'project');
+        this.projectRoot = path.join(this.root, 'project');
     },
     packInstaller(installer) {
         const { name, version, targets, branch, children } = installer;
@@ -53,47 +53,94 @@ const task = {
         this.initGit(name, branch);
         this.initVersion(name, version);
         
-        const projectFolder = path.join(this.projectFolder, name);
+        const projectFolder = path.join(this.projectRoot, name);
         // 单个客户端打包结果目录，按客户端标识区分
         const resultFolder = path.join(this.resultRoot, name);
         fse.ensureDirSync(resultFolder);
         // 打包子应用并copy到client文件夹
+        const appList = [];
         if (children?.length) {
             const clientFolder = path.join(projectFolder, 'client');
             fse.ensureDirSync(clientFolder);
             fse.emptyDirSync(clientFolder);
             for (const child of children) {
-                const childPkg = this.packChild(child);
-                fse.copySync(childPkg, path.join(clientFolder, path.basename(childPkg)));
-                fse.copySync(childPkg, path.join(resultFolder, path.basename(childPkg)));
+                const { childParams } = this.packChild(child, clientFolder, resultFolder);
+                appList.push(childParams);
             }
         }
         
+        // 客户端批量上传参数
+        const batchParams = [];
+        const pkgJson = fse.readJsonSync(path.join(projectFolder, 'package.json'));
         shell.cd(projectFolder);
         shell.exec('npm i');
         for (const target of targets) {
             log.title(`开始打包${name}-${target}：`);
             shell.exec(`npm run pack:${target} ${config.env}`);
             const packResult = getInstaller(projectFolder);
+            // 大版本文件（安装包）
             fse.copySync(packResult.installer, path.join(resultFolder, path.basename(packResult.installer)));
+            // 小版本文件
             fse.copySync(packResult.smallPkg, path.join(resultFolder, path.basename(packResult.smallPkg)));
+            // icon
+            const iconPath = path.join(projectFolder, 'builderClient/icons/128x128.png');
+            fse.copySync(iconPath, path.join(resultFolder, `${pkgJson.name}.png`));
+            batchParams.push({
+                clientName: pkgJson.appName,
+                // win平台使用pkgJson.name，其他平台使用pkgJson.name-target
+                identification: `${pkgJson.name}${target.includes('win') ? '' : '-' + target}`,
+                copyright: pkgJson.author,
+                description: pkgJson.description,
+                iconImg: `${pkgJson.name}.png`,
+                versionCode: version,
+                bigVersionFile: path.basename(packResult.installer),
+                smallVersionFile: path.basename(packResult.smallPkg),
+                isEncrypt: '0',
+                apps: appList,
+            });
         }
+        // 客户端批量上传参数
+        fse.writeFileSync(path.join(resultFolder, 'params.json'), JSON.stringify(batchParams, null, 4));
     },
-    packChild(child) {
+    packChild(child, clientFolder, resultFolder) {
         const { name, version, branch } = child;
         this.initGit(name, branch);
         this.initVersion(name, version);
 
         log.title(`开始打包${name}：`);
-        const projectFolder = path.join(this.projectFolder, name);
+        const projectFolder = path.join(this.projectRoot, name);
         shell.cd(projectFolder);
         shell.exec('npm i');
         shell.exec(`npm run pack:child ${config.env}`);
-        return getChildPkg(projectFolder);
+
+        const childPkg = getChildPkg(projectFolder);
+        // 子应用复制到client文件夹
+        fse.copySync(childPkg, path.join(clientFolder, path.basename(childPkg)));
+        // 子应用复制到最终产物文件夹
+        fse.copySync(childPkg, path.join(resultFolder, path.basename(childPkg)));
+
+        const pkgJson = fse.readJsonSync(path.join(projectFolder, 'package.json'));
+        const iconPath = path.join(projectFolder, 'builderClient/icons/128x128.png');
+        // 子应用icon复制到最终产物文件夹
+        fse.copySync(iconPath, path.join(resultFolder, `${pkgJson.name}.png`));
+        return {
+            childPkg,
+            iconPath,
+            childParams: {
+                applicationName: pkgJson.appName,
+                identification: pkgJson.name,
+                iconImg: `${pkgJson.name}.png`,
+                description: pkgJson.description,
+                // verison使用配置中的
+                versionCode: version,
+                versionFile: path.basename(childPkg),
+                isEncrypt: '0'
+            }
+        }
     },
     initGit(projectName, branch) {
         log.title(`初始化${projectName}git仓库：`);
-        const folder = path.join(this.projectFolder, projectName);
+        const folder = path.join(this.projectRoot, projectName);
         shell.cd(folder);
         shell.exec('git checkout .');
         shell.exec(`git checkout ${branch || 'develop'}`);
@@ -104,7 +151,7 @@ const task = {
     initVersion(projectName, version) {
         // version不存在时，使用项目中配置的version
         if (!version) return;
-        const folder = path.join(this.projectFolder, projectName);
+        const folder = path.join(this.projectRoot, projectName);
         const versionPath = path.join(folder, 'public/version/index.js');
         const code = fse.readFileSync(versionPath).toString();
         const versionObj = eval(code);
