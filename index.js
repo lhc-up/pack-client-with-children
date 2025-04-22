@@ -159,13 +159,15 @@ const task = {
         fse.writeFileSync(versionPath, `module.exports = ${JSON.stringify(versionObj, null, 4)}`);
     },
     zip() {
-        const zipName = `安装包-${config.env}-${formatNow()}.zip`;
-        log.title(`压缩${zipName}：`);
-        shell.cd(this.root);
-        shell.exec('rm -rf *.zip');
-        shell.cd(this.resultRoot);
-        // mac环境
-        shell.exec(`zip -r ../${zipName} .`);
+        const installers = config.installers || [];
+        for (const installer of installers) {
+            const folder = path.join(this.resultRoot, installer.name);
+            const zipName = `安装包批量上传-${config.env}-${formatNow()}.zip`;
+            log.title(`压缩${zipName}：`);
+            shell.cd(folder);
+            // mac环境
+            shell.exec(`zip -r ./${zipName} .`);
+        }
     }
 }
 
