@@ -55,7 +55,7 @@ const task = {
         
         const projectFolder = path.join(this.projectRoot, name);
         // 单个客户端打包结果目录，按客户端标识区分
-        const resultFolder = path.join(this.resultRoot, name);
+        const resultFolder = path.join(this.resultRoot, `${name}-${config.env}-${version}`);
         fse.ensureDirSync(resultFolder);
         // 打包子应用并copy到client文件夹
         const appList = [];
@@ -75,7 +75,7 @@ const task = {
         shell.cd(projectFolder);
         shell.exec('npm i');
         for (const target of targets) {
-            log.title(`开始打包${name}-${target}：`);
+            log.title(`开始打包${name}-${version}-${target}：`);
             shell.exec(`npm run pack:${target} ${config.env}`);
             const packResult = getInstaller(projectFolder);
             // 大版本文件（安装包）
@@ -159,12 +159,11 @@ const task = {
         fse.writeFileSync(versionPath, `module.exports = ${JSON.stringify(versionObj, null, 4)}`);
     },
     zip() {
-        const installers = config.installers || [];
-        for (const installer of installers) {
-            const folder = path.join(this.resultRoot, installer.name);
-            const zipName = `安装包批量上传-${config.env}-${formatNow()}.zip`;
-            log.title(`压缩${zipName}：`);
-            shell.cd(folder);
+        const folders = fse.readdirSync(this.resultRoot);
+        for (const folderName of folders) {
+            const zipName = `${folderName}-${formatNow()}.zip`
+            log.title(`压缩：${zipName}：`);
+            shell.cd(path.join(this.resultRoot, folderName));
             // mac环境
             shell.exec(`zip -r ./${zipName} .`);
         }
