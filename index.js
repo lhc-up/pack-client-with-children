@@ -174,8 +174,12 @@ const task = {
             const zipName = `${folderName}-${formatNow()}.zip`
             log.title(`压缩：${zipName}：`);
             shell.cd(path.join(this.resultRoot, folderName));
-            // mac环境
-            shell.exec(`zip -r ./${zipName} .`);
+            // TODO: 使用压缩程序代替命令，保证各平台一致性？
+            if (isWin) {
+                shell.exec(`powershell Compress-Archive -Path ./* -DestinationPath ./${zipName}`);
+            } else {
+                shell.exec(`zip -r ./${zipName} .`);
+            }
         }
     }
 }
