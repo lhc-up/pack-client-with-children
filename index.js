@@ -1,10 +1,15 @@
 const shell = require('shelljs');
 const fse = require('fs-extra');
 const path = require('path');
+const os = require('os');
 const { getChildPkg, getInstaller, formatNow } = require('./utils/utils.js');
 const log = require('./utils/log.js');
 const config = require('./config.js');
 const inquirer = require('inquirer');
+
+const isWin = os.platform() === 'win32';
+const isMac = os.platform() === 'darwin';
+const isLinux = os.platform() === 'linux';
 
 // TODO:
 // 1. 文件夹名称使用客户端标识（或txt文件标明关系）
@@ -47,7 +52,7 @@ const task = {
         this.projectRoot = path.join(this.root, 'project');
     },
     packInstaller(installer) {
-        const { name, version, targets, branch, children } = installer;
+        const { name, version, targets, branch, children, sign } = installer;
         if (!targets?.length) return;
 
         this.initGit(name, branch);
@@ -76,7 +81,12 @@ const task = {
         shell.exec('npm i');
         for (const target of targets) {
             log.title(`开始打包${name}-${version}-${target}：`);
-            shell.exec(`npm run pack:${target} ${config.env}`);
+            let packCmd = `npm run pack:${target} ${config.env}`;
+            if (sign && isWin && target.includes('win')) {
+                log.title(`开始签名${name}-${version}-${target}：`);
+                packCmd += ' sign';
+            }
+            shell.exec(packCmd);
             const packResult = getInstaller(projectFolder);
             // 大版本文件（安装包）
             fse.copySync(packResult.installer, path.join(resultFolder, path.basename(packResult.installer)));

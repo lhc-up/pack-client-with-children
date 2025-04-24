@@ -4,6 +4,7 @@ const config = {
         {
             name: 'eachinaclientframe',
             version: '1.4.0',
+            sign: true,
             targets: [
                 'linux-x64',
                 'linux-arm64',
