@@ -83,7 +83,6 @@ const task = {
             log.title(`开始打包${name}-${version}-${target}：`);
             let packCmd = `npm run pack:${target} ${config.env}`;
             if (sign && isWin && target.includes('win')) {
-                log.title(`开始签名${name}-${version}-${target}：`);
                 packCmd += ' sign';
             }
             shell.exec(packCmd);
