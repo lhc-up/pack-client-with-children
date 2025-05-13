@@ -4,8 +4,10 @@ const path = require('path');
 const os = require('os');
 const { getChildPkg, getInstaller, formatNow } = require('./utils/utils.js');
 const log = require('./utils/log.js');
-const config = require('./config.js');
+// const config = require('./config.js');
+const config = require('./config.area-bnu.js');
 const inquirer = require('inquirer');
+const { reDownloadElectronBuilderForLoongArc } = require('./utils/reDownloadNodeModules.js');
 
 const isWin = os.platform() === 'win32';
 const isMac = os.platform() === 'darwin';
@@ -79,6 +81,10 @@ const task = {
         const pkgJson = fse.readJsonSync(path.join(projectFolder, 'package.json'));
         shell.cd(projectFolder);
         shell.exec('npm i');
+        const hasLoong64 = targets.includes('linux-loong64');
+        if (hasLoong64) {
+            reDownloadElectronBuilderForLoongArc(projectFolder);
+        }
         for (const target of targets) {
             log.title(`开始打包${name}-${version}-${target}：`);
             let packCmd = `npm run pack:${target} ${config.env}`;

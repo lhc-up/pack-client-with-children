@@ -1,5 +1,5 @@
 const config = {
-    env: 'test',
+    env: 'release',
     installers: [
         {
             name: 'eachinaclientframe',
@@ -14,7 +14,7 @@ const config = {
             children: [
                 {
                     name: "questionnaire-answer-v3.0",
-                    version: "2.6.4",
+                    version: "2.6.5",
                     // 默认develop
                     branch: 'develop',
                     // icon: 'builderClient/icons/128x128.png'
