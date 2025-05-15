@@ -176,7 +176,7 @@ const task = {
     zip() {
         const folders = fse.readdirSync(this.resultRoot);
         for (const folderName of folders) {
-            const zipName = `${folderName}-${formatNow()}.zip`
+            const zipName = `${config.name}-${folderName}-${formatNow()}.zip`
             log.title(`压缩：${zipName}：`);
             shell.cd(path.join(this.resultRoot, folderName));
             // TODO: 使用压缩程序代替命令，保证各平台一致性？

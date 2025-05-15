@@ -1,4 +1,5 @@
 const config = {
+    name: '个性化监测',
     env: 'release',
     installers: [
         {
@@ -14,7 +15,7 @@ const config = {
             children: [
                 {
                     name: "questionnaire-answer-v3.0",
-                    version: "1.0.0",
+                    version: "1.0.1",
                     branch: 'support/bnu-area-2025',
                 },
             ]

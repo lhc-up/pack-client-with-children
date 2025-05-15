@@ -1,4 +1,5 @@
 const config = {
+    name: '国家监测',
     env: 'release',
     installers: [
         {
